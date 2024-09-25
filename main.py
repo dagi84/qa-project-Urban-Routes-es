@@ -1,5 +1,5 @@
 import time
-
+from selenium.webdriver import ActionChains
 import data
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -7,7 +7,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.chrome.service import Service
-from locators import ComfortMethodLocators
 
 driver_path = r"C:\Users\dagip\Documents\QA Engeneer\chromedriver-win64\chromedriver-win64\chromedriver.exe"
 service = Service(driver_path)
@@ -48,22 +47,18 @@ class UrbanRoutesPage:
     comfort_button = (By.CLASS_NAME, 'tcard-icon')
     phone_number_field = (By.ID, 'phone')
     phone_send = (By.XPATH, '//button[text()="Siguiente"]')
-    message_to_driver = (By.CSS_SELECTOR, "#comment")
+    message_to_driver = (By.XPATH, "//label[@for='comment']")
     order_blanket_tissues = (By.CSS_SELECTOR, 'div.reqs-arrow.open img[alt="Arrow"]')
-
-
-    #active_switch = (By.CSS_SELECTOR, 'input.switch-input[type="checkbox"]')
-    #code_sms = (By.CSS_SELECTOR, '[name="phone"]')
-    #confirm_button = (By.XPATH, '//button[text()="Confirmar"]')
-    #payment_method = (By.CLASS_NAME, 'pp-text')
-    #card_add_button = (By.CLASS_NAME, 'pp-title')
-    #add_credit_card = (By.XPATH, '//*[text()="agregar tarjeta"]')
-    #add_card_number = (By.ID, 'number')
-    #card_cvv = (By.XPATH, '//*[@id="code"]')
-    #add_card_action_button = (By.CSS_SELECTOR, 'button[type="submit"].button.full')
-    #button_close = (By.CSS_SELECTOR, 'button.close-button')
-
-    #icecream_button = (By.XPATH, '//div[@class="r-counter-label" and text()="Helado"]')
+    payment_method = (By.CLASS_NAME, 'pp-text')
+    space_message =(By.CSS_SELECTOR, "#comment")
+    card_add_button = (By.XPATH, "//div[@class='pp-title' and text()='Agregar tarjeta']")
+    add_card_number = (By.CSS_SELECTOR, ".card-input")
+    card_cvv = (By.XPATH, "//input[@placeholder='12']")
+    button_add = (By.XPATH, "//button[text()='Agregar']")
+    button_close = (By.XPATH, "//*[@id='root']/div/div[2]/div[2]/div[1]/button")
+    add_orders = (By.XPATH, "//div[text()='Requisitos del pedido']")
+    req_blanket_and_tissues = (By.CLASS_NAME, "slider")
+    icecream_button = (By.CSS_SELECTOR, "div.counter-plus.disabled")
     #add_icecream = (By.CSS_SELECTOR, 'div.counter-plus')
 
     def __init__(self, driver):
@@ -114,15 +109,6 @@ class UrbanRoutesPage:
         self.fill_phone_number(number)
         self.click_phone_number()
 
-    # Retorna un sms que se debe introducir
-    def get_code_sms(self):
-        get_phone_code = retrieve_phone_code(self.driver)
-        return self.driver.find_element(*self.code_sms).send_keys(get_phone_code)
-
-    # Click en confirmar mensaje sms
-    def confirm_button(self):
-        self.driver.find_element(*self.confirm_button).click()
-
     # clic en el botón que permite seleccionar un metodo de pago
     def payment_method_button(self):
         self.driver.find_element(*self.payment_method).click()
@@ -133,50 +119,32 @@ class UrbanRoutesPage:
 
     # clic en el botón que permite agregar una tarjeta de crédito
     def add_card(self):
-        self.driver.find_element(*self.add_credit_card).click()
 
-    # Encuentra los campos para ingresar el número de la tarjeta y el código CVV
-    def add_number(self):
         self.driver.find_element(*self.add_card_number).send_keys(data.card_number)
         self.driver.find_element(*self.card_cvv).send_keys(data.card_code)
-
-    # clic en agregar
-    def add_card_button(self):
-        self.driver.find_element(*self.add_card_action_button).click()
-
-    # clic en cerrar ventana
-    def close_the_window(self):
+        self.driver.find_element(By.ID, "number").click()
+        self.driver.find_element(*self.button_add).click()
         self.driver.find_element(*self.button_close).click()
 
+
     # Buscar campo"Mensaje para el conductor"
-    def add_message_for_driver(self,message):
-        self.driver.find_element(*self.message_to_driver).send_keys(message)
+    def add_message_for_driver(self):
+        self.driver.find_element(*self.message_to_driver).click()
 
-    def get_message_for_driver(self):
-        return self.driver.find_element(*self.message_to_driver).text
-
-
-
+    def get_message_for_driver(self,message):
+        self.driver.find_element(*self.space_message).send_keys(message)
 
     # Pedir manta y panuelos
     def search_order_blanket_tissues(self):
-        self.driver.find_element(*self.order_blanket_tissues).click()
-
-    # validar que manta y panuelos esten seleccionados
-    def blanket_tissues_selected(self):
-        self.driver.find_element(*self.order_blanket_tissues).is_displayed()
+        self.driver.find_element(*self.add_orders).click()
+        return self.driver.find_element(*self.req_blanket_and_tissues).click()
 
 
     # busco para agregar helados
     def search_icecream(self):
-        ice_cream = self.driver.find_element(*self.icecream_button)
-        return self.driver.scroll_to_element(ice_cream)
-
-    # agrego los helados
-    def add_ice_cream(self):
-        self.driver.find_element(*self.add_icecream)
-        action = ActionChains(self.driver)
-        action.double_click(ice_cream_element).perform()
+        icecream_button = self.driver.find_element(*self.icecream_button)
+        actions = ActionChains(self.driver)
+        actions.double_click(icecream_button).perform()
 
 
 class TestUrbanRoutes:
@@ -190,6 +158,7 @@ class TestUrbanRoutes:
         capabilities["goog:loggingPrefs"] = {'performance': 'ALL'}
         cls.driver = webdriver.Chrome()
 
+    # Test 1:para ingresar origen y destino
     def test_set_route(self):
         self.driver.get(data.urban_routes_url)
         time.sleep(3)
@@ -198,25 +167,19 @@ class TestUrbanRoutes:
         assert routes_page.get_from() == data.address_from
         assert routes_page.get_to() == data.address_to
 
+    # Test 2: para seleccionar tarifa confort
     def test_comfort(self):
         request_taxi = (By.XPATH, ".//div[@class='results-text']/button[@class='button round']")
-
         # Esperar a que el botón sea clickeable
         WebDriverWait(self.driver, 10).until(expected_conditions.element_to_be_clickable(request_taxi))
-
         # Desempaquetar el localizador para find_element
         self.driver.find_element(*request_taxi).click()
-
-        # Esperar a que el botón de Comfort sea clickeable
-     #   WebDriverWait(self.driver, 10).until(
-      #      expected_conditions.element_to_be_clickable(ComfortMethodLocators.COMFORT_BUTTON))
-
         route_page = UrbanRoutesPage(self.driver)
         route_page.click_comfort_button()
-
         # Validar el estado del botón
         assert route_page.is_comfort_button_selected() == True
 
+    # Test 3: para rellenar numero de telefono
     def test_fill_phone_number(self):
         number = (By.CLASS_NAME, "np-text")
         code = (By.ID, "code")
@@ -225,7 +188,35 @@ class TestUrbanRoutes:
         route_page = UrbanRoutesPage(self.driver)
         route_page.send_phone_number(data.phone_number)
         self.driver.find_element(*code).send_keys(retrieve_phone_code(driver=self.driver))
-        self.driver.find_element(confirm).click()
+        self.driver.find_element(*confirm).click()
+
+    # Test 4: Para agregar tarjeta
+    def test_add_payment_method(self):
+        route_page = UrbanRoutesPage(self.driver)
+        route_page.payment_method_button()
+        route_page.pick_card_button()
+        route_page.add_card()
+
+    # Test 5: Mensaje para el conductor
+    def test_message_to_driver(self):
+        route_page = UrbanRoutesPage(self.driver)
+        route_page.add_message_for_driver()
+        message = data.message_for_driver
+        route_page.get_message_for_driver(message)
+
+    # Test 6: Pedir manta y panuelos
+    def test_blanket_and_tissues(self):
+        route_page = UrbanRoutesPage(self.driver)
+        route_page.search_order_blanket_tissues()
+
+    # Test 7: Pedir helados
+    def test_add_icecream(self):
+        route_page = UrbanRoutesPage(self.driver)
+        route_page.search_icecream()
+
+    # Test 8: Modal para buscar taxi
+
+    # Test 9: Pedir manta y panuelos
 
 
     @classmethod
