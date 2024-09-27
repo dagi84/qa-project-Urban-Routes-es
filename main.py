@@ -59,7 +59,7 @@ class UrbanRoutesPage:
     add_orders = (By.XPATH, "//div[text()='Requisitos del pedido']")
     req_blanket_and_tissues = (By.CLASS_NAME, "slider")
     icecream_button = (By.CSS_SELECTOR, "div.counter-plus.disabled")
-    #add_icecream = (By.CSS_SELECTOR, 'div.counter-plus')
+    add_icecream = (By.XPATH, '//*[@id="root"]/div/div[3]/div[3]/div[2]/div[2]/div[4]/div[2]/div[3]/div/div[2]/div[1]/div/div[2]/div/div[3]')
 
     def __init__(self, driver):
         self.driver = driver
@@ -142,10 +142,11 @@ class UrbanRoutesPage:
 
     # busco para agregar helados
     def search_icecream(self):
-        icecream_button = self.driver.find_element(*self.icecream_button)
-        actions = ActionChains(self.driver)
-        actions.double_click(icecream_button).perform()
-
+        icecream = self.driver.find_element(*self.add_icecream)
+        return self.driver.scroll_to_element(icecream)
+        WebDriverWait(self.driver, 3).until(expected_conditions.visibility_of_element_located(*self.add_icecream))
+        self.driver.find_element(*self.add_icecream).double_click(*self.add_icecream)
+        self.driver.find_element(*self.add_icecream).is_selected()
 
 class TestUrbanRoutes:
     driver = None
@@ -196,6 +197,7 @@ class TestUrbanRoutes:
         route_page.payment_method_button()
         route_page.pick_card_button()
         route_page.add_card()
+        assert self.driver.find_element(*route_page.button_close).is_displayed() == False, "La tarjeta no fue añadida correctamente"
 
     # Test 5: Mensaje para el conductor
     def test_message_to_driver(self):
@@ -203,11 +205,13 @@ class TestUrbanRoutes:
         route_page.add_message_for_driver()
         message = data.message_for_driver
         route_page.get_message_for_driver(message)
+        assert route_page.driver.find_element(*route_page.space_message).get_property('value') == message, "El mensaje no fue enviado correctamente"
 
     # Test 6: Pedir manta y panuelos
     def test_blanket_and_tissues(self):
         route_page = UrbanRoutesPage(self.driver)
         route_page.search_order_blanket_tissues()
+        assert self.driver.find_element(By.XPATH, "//div[@class='r-sw-container']/div[@class='r-sw']/div[@class='switch']").is_enabled()
 
     # Test 7: Pedir helados
     def test_add_icecream(self):
@@ -215,9 +219,8 @@ class TestUrbanRoutes:
         route_page.search_icecream()
 
     # Test 8: Modal para buscar taxi
-
-    # Test 9: Pedir manta y panuelos
-
+    def test_final_button(self):
+        assert self.driver.find_element(By.CSS_SELECTOR, "smart-button-secondary").is_enabled() == True
 
     @classmethod
     def teardown_class(cls):
